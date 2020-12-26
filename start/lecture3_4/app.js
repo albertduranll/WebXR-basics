@@ -89,9 +89,9 @@ class App{
         
         const button = new VRButton( this.renderer );
         
-        this.controllers = this.buildControllers();
-
         const self = this;
+
+        this.controllers = this.buildControllers();
 
         function onSelectStart(){
             this.children[0].scale.z = 10;
@@ -101,7 +101,7 @@ class App{
         function onSelectEnd(){
             this.children[0].scale.z = 0;
             self.highlight.visible = false;
-            this.userData.selectedPressed = false;
+            this.userData.selectPressed = false;
         }
 
         this.controllers.forEach((controller) => {
