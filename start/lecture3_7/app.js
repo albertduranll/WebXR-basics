@@ -36,7 +36,6 @@ class App{
         this.controls.update();
         
         this.stats = new Stats();
-        document.body.appendChild( this.stats.dom );
         
         this.raycaster = new THREE.Raycaster();
         this.workingMatrix = new THREE.Matrix4();
@@ -44,7 +43,7 @@ class App{
         this.origin = new THREE.Vector3();
         
         this.initScene();
-        this.setupXR();
+        this.setupVR();
         
         window.addEventListener('resize', this.resize.bind(this) );
         
@@ -90,10 +89,9 @@ class App{
             }
         }
         
-        
     } 
     
-    setupXR(){
+    setupVR(){
         this.renderer.xr.enabled = true;
         
         const button = new VRButton( this.renderer );
@@ -112,7 +110,6 @@ class App{
         }
         
         this.controller = this.renderer.xr.getController( 0 );
-        this.dolly.add( this.controller );
         this.controller.addEventListener( 'selectstart', onSelectStart );
         this.controller.addEventListener( 'selectend', onSelectEnd );
         this.controller.addEventListener( 'connected', function ( event ) {
@@ -136,6 +133,14 @@ class App{
         this.controllerGrip = this.renderer.xr.getControllerGrip( 0 );
         this.controllerGrip.add( controllerModelFactory.createControllerModel( this.controllerGrip ) );
         this.scene.add( this.controllerGrip );
+        
+        this.dolly = new THREE.Object3D();
+        this.dolly.position.z = 5;
+        this.dolly.add( this.camera );
+        this.scene.add( this.dolly );
+        
+        this.dummyCam = new THREE.Object3D();
+        this.camera.add( this.dummyCam );
 
     }
     
@@ -167,6 +172,59 @@ class App{
     handleController( controller, dt ){
         if (controller.userData.selectPressed ){
             
+            const wallLimit = 1.3;
+            const speed = 2;
+            let pos = this.dolly.position.clone();
+            pos.y += 1;
+
+            let dir = new THREE.Vector3();
+            //Store original dolly rotation
+            const quaternion = this.dolly.quaternion.clone();
+            //Get rotation for movement from the headset pose
+            this.dolly.quaternion.copy( this.dummyCam.getWorldQuaternion() );
+            this.dolly.getWorldDirection(dir);
+            dir.negate();
+            this.raycaster.set(pos, dir);
+
+            let blocked = false;
+
+            let intersect = this.raycaster.intersectObjects(this.colliders);
+            if (intersect.length>0){
+                if (intersect[0].distance < wallLimit) blocked = true;
+            }
+
+            if (!blocked){
+                this.dolly.translateZ(-dt*speed);
+                pos = this.dolly.getWorldPosition( this.origin );
+            }
+
+            //cast left
+            dir.set(-1,0,0);
+            dir.applyMatrix4(this.dolly.matrix);
+            dir.normalize();
+            this.raycaster.set(pos, dir);
+
+            intersect = this.raycaster.intersectObjects(this.colliders);
+            if (intersect.length>0){
+                if (intersect[0].distance<wallLimit) this.dolly.translateX(wallLimit-intersect[0].distance);
+            }
+
+            //cast right
+            dir.set(1,0,0);
+            dir.applyMatrix4(this.dolly.matrix);
+            dir.normalize();
+            this.raycaster.set(pos, dir);
+
+            intersect = this.raycaster.intersectObjects(this.colliders);
+            if (intersect.length>0){
+                if (intersect[0].distance<wallLimit) this.dolly.translateX(intersect[0].distance-wallLimit);
+            }
+
+            this.dolly.position.y = 0;
+
+            //Restore the original rotation
+            this.dolly.quaternion.copy( quaternion );
+   
         }
     }
     
