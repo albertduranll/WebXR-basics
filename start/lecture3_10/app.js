@@ -105,7 +105,6 @@ class App{
         this.renderer.xr.enabled = true; 
         
         const self = this;
-        let controller;
         
         function onConnected( event ) {
             if (self.info === undefined){
@@ -133,24 +132,22 @@ class App{
         }
         
         function onSessionStart(){
-            self.ui.mesh.position.set(0,-0.5,-1.1);
-            self.camera.add(self.ui.mesh);
+            self.ui.mesh.position.set( 0, -0.5, -1.1 );
+            self.camera.add( self.ui.mesh );
         }
         
         function onSessionEnd(){
-            self.camera.remove(self.ui.mesh);
+            self.camera.remove( self.ui.mesh );
         }
-        
-        const btn = new ARButton(this.renderer, { onSessionStart, onSessionEnd, 
-            sessionInit: { optionalFeatures: ['dom-overlay'], domOverlay: { root:
-            document.body }} });
-        
-        const controller = this.renderer.xr.getController(0);
-        controller.addEventListener('connected', onConnected);
 
-        this.scene.add(controller);
+        const btn = new ARButton( this.renderer, { onSessionStart, onSessionEnd, sessionInit: { optionalFeatures: [ 'dom-overlay' ], domOverlay: { root: document.body } } } ); 
+        
+        const controller = this.renderer.xr.getController( 0 );
+        controller.addEventListener( 'connected', onConnected );
+        
+        this.scene.add( controller );
         this.controller = controller;
-
+        
         this.renderer.setAnimationLoop( this.render.bind(this) );
     }
     
@@ -161,7 +158,7 @@ class App{
     }
     
     createMsg( pos, rot ){
-        const msg = `position:${pos.x.toFixed(2)},${pos.y.toFixed(2)},${pos.z.toFixed(2)} rotation:${rot.x.toFixed(2)},${rot.y.toFixed(2)},${rot.z.toFixed(2)}`;
+        const msg = `position:${pos.x.toFixed(3)},${pos.y.toFixed(3)},${pos.z.toFixed(3)} rotation:${rot.x.toFixed(2)},${rot.y.toFixed(2)},${rot.z.toFixed(2)}`;
         return msg;
     }
     
@@ -171,9 +168,9 @@ class App{
         this.ui.update();
         if (this.renderer.xr.isPresenting){
             const pos = this.controller.getWorldPosition( this.origin );
-            this.euler.setFromQuaternion( this.controller.getWorldQuaternion( this.quaternion ));
-            
-            const msg = this.createMsg( pos, this.euler );
+            this.euler.setFromQuaternion( this.controller.getWorldQuaternion( this.quaternion ) );
+            const rot = this.euler;
+            const msg = this.createMsg( pos, rot );
             this.ui.updateElement("msg", msg);
         }
         this.renderer.render( this.scene, this.camera );
